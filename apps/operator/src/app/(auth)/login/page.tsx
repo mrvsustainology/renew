@@ -192,7 +192,7 @@ export default function LoginPage() {
           </div>
 
           {/* Dev hint */}
-          <div
+          {/* <div
             style={{
               marginTop: 18,
               padding: "12px 14px",
@@ -205,7 +205,8 @@ export default function LoginPage() {
             }}
           >
             OP001 / pass123 · OP002 / pass456
-          </div>
+          </div> */}
+
         </div>
       </div>
     </div>
