@@ -1,3 +1,9 @@
+
+# build commands
+cd /home/ubuntu/renew/apps/server && pnpm build && cd ../..
+cd /home/ubuntu/renew/apps/operator && pnpm build && cd ../..
+cd /home/ubuntu/renew/apps/admin && pnpm build && cd ../..
+
 # first delte all
 pm2 delete all
 
