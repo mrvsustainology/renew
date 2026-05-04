@@ -30,6 +30,8 @@ const FEEDSTOCK_TYPES = [
   "Mixed Organic",
 ] as const;
 
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+
 type FeedstockType = (typeof FEEDSTOCK_TYPES)[number];
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -77,6 +79,7 @@ export default function FeedstockPage() {
   const [done, setDone] = useState(false);
   const [offline, setOffline] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   const canSubmit = !!form.weight && !!form.type && !!form.photo;
 
@@ -290,11 +293,27 @@ export default function FeedstockPage() {
               photo={form.photoPreview}
               photoName={form.photo?.name}
               onPhotoChange={(file, preview) => {
+                if (file && file.size > MAX_PHOTO_BYTES) {
+                  setPhotoError(
+                    "Image too large. Please upload a photo under 10MB.",
+                  );
+                  set("photo", null);
+                  set("photoPreview", undefined);
+                  return;
+                }
+                setPhotoError(null);
                 set("photo", file);
                 set("photoPreview", preview);
               }}
             />
           </Field>
+
+          {photoError && <AlertBox type="warning">{photoError}</AlertBox>}
+          {!photoError && (
+            <p style={{ fontSize: 11, color: C.muted, textAlign: "center" }}>
+              Max image size: 10MB.
+            </p>
+          )}
 
           <Field label="Notes / Observations">
             <TA
