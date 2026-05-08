@@ -29,6 +29,7 @@ function makeTimestamp(dateStr: string, baseHour: number, idx: number): Date {
 
 async function main() {
     console.log("🌱 Seeding database...");
+    const seedDemo = process.env.SEED_DEMO === "true";
 
     // ── Digesters ────────────────────────────────────────────────────────────
     const digesters = await Promise.all([
@@ -66,12 +67,19 @@ async function main() {
     console.log(`✅ ${digesters.length} digesters`);
 
     // ── Admin User ───────────────────────────────────────────────────────────
-    const adminHash = await bcrypt.hash("admin123", 12);
+    const adminHash = await bcrypt.hash("RHI@1123##", 12);
     await prisma.user.upsert({
-        where: { id: "ADMIN" },
-        update: {},
+        where: { id: "RHI-ADMIN" },
+        update: {
+            name: "Program Admin",
+            phone: "0000000000",
+            passwordHash: adminHash,
+            role: "admin",
+            status: "active",
+            digesterId: null,
+        },
         create: {
-            id: "ADMIN",
+            id: "RHI-ADMIN",
             name: "Program Admin",
             phone: "0000000000",
             passwordHash: adminHash,
@@ -81,6 +89,11 @@ async function main() {
         },
     });
     console.log("✅ Admin user");
+
+    if (!seedDemo) {
+        console.log("Admin seed complete (SEED_DEMO not enabled).");
+        return;
+    }
 
     // ── Operator Users ────────────────────────────────────────────────────────
     const operators = [
@@ -299,7 +312,7 @@ async function main() {
 
     console.log("\n🎉 Seeding complete!");
     console.log("\nLogin credentials:");
-    console.log("  Admin : phone=0000000000  password=admin123");
+    console.log("  RHI-ADMIN : phone=0000000000  password=RHI@1123##");
     console.log("  OP001 : phone=9876543210  password=pass123  (DG-001)");
     console.log("  OP002 : phone=9876500211  password=pass456  (DG-002)");
     console.log("  OP003 : phone=9876577712  password=pass789  (DG-003)");

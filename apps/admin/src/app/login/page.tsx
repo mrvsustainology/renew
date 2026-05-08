@@ -138,7 +138,7 @@ export default function LoginPage() {
                 value={id}
                 onChange={(e) => setId(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                placeholder="e.g. ADMIN"
+                placeholder="e.g. RHI-ADMIN"
                 style={{
                   border: `1.5px solid ${C.border}`,
                   borderRadius: 8,
