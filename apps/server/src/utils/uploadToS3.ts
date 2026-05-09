@@ -64,6 +64,13 @@ export const getPresignedUrl = async (keyOrUrl: string): Promise<string> => {
         // Not a URL — treat as key directly
     }
 
+    // Decode once to avoid double-encoded keys (e.g. %2520 in filenames)
+    try {
+        key = decodeURIComponent(key);
+    } catch {
+        // Keep original key if it's not valid percent-encoding
+    }
+
     const command = new GetObjectCommand({
         Bucket: env.S3_BUCKET_NAME,
         Key: key,
