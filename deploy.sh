@@ -1,4 +1,7 @@
 
+# sync DB schema and regenerate Prisma client before building
+cd /home/ubuntu/renew/apps/server && npx prisma db push && npx prisma generate && cd ../..
+
 # build commands
 cd /home/ubuntu/renew/apps/server && pnpm build && cd ../..
 cd /home/ubuntu/renew/apps/operator && pnpm build && cd ../..
