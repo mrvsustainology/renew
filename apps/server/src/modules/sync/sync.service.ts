@@ -114,9 +114,11 @@ export const syncService = {
                 const log = await prisma.feedstockLog.create({
                     data: {
                         date: actualDate,
-                        weight: parseFloat(item.payload.weight),
-                        waterLitres: parseFloat(item.payload.waterLitres) || 0,
                         type: item.payload.type,
+                        weight: parseFloat(item.payload.weight),
+                        type2: item.payload.type2 || null,
+                        weight2: item.payload.weight2 ? parseFloat(item.payload.weight2) : null,
+                        waterLitres: parseFloat(item.payload.waterLitres) || 0,
                         notes: item.payload.notes || null,
                         photoUrl,
                         digesterId,

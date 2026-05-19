@@ -64,9 +64,11 @@ model Household {
 model FeedstockLog {
   id          String   @id @default(uuid())
   date        DateTime
-  weight      Float
-  waterLitres Float    @default(0)
   type        String
+  weight      Float
+  type2       String?
+  weight2     Float?
+  waterLitres Float    @default(0)
   photoUrl    String
   notes       String?
   createdAt   DateTime @default(now())

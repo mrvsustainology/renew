@@ -25,6 +25,8 @@ interface BaseRecord {
 interface FeedstockRecord extends BaseRecord {
   type: string;
   weight: number;
+  type2?: string;
+  weight2?: number;
   waterLitres?: number;
 }
 
@@ -80,14 +82,19 @@ function applyDateFilter(items: HistoryRecord[], from: string, to: string) {
 
 // ─── Row renderers ────────────────────────────────────────────────────────────
 function FeedstockRow({ r }: { r: FeedstockRecord }) {
+  const typeLabel = r.type2 ? `${r.type} + ${r.type2}` : r.type;
+  const weightDetail = r.type2 && r.weight2 != null
+    ? `W1: ${r.weight} kg · W2: ${r.weight2} kg`
+    : `${r.weight} kg`;
+
   return (
     <>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 600, fontSize: 13, fontFamily: C.sans }}>
-          {r.type}
+          {typeLabel}
         </div>
         <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
-          {fmtDate(r.date)} · {r.weight} kg · {r.waterLitres ?? 0} L water
+          {fmtDate(r.date)} · {weightDetail} · {r.waterLitres ?? 0} L water
           {r.notes ? ` · ${r.notes}` : ""}
         </div>
       </div>

@@ -38,9 +38,11 @@ export const feedstockService = {
         const log = await prisma.feedstockLog.create({
             data: {
                 date: buildTimestamp(dto.date),
-                weight: dto.weight,
-                waterLitres: dto.waterLitres ?? 0,
                 type: dto.type,
+                weight: dto.weight,
+                type2: dto.type2 ?? null,
+                weight2: dto.weight2 ?? null,
+                waterLitres: dto.waterLitres ?? 0,
                 notes: dto.notes,
                 photoUrl,
                 digesterId,

@@ -373,10 +373,19 @@ export default function OverviewPage() {
               <XAxis dataKey="date" {...ax} interval={1} />
               <YAxis {...ax} unit=" kg" />
               <Tooltip {...tt} />
+              <Legend iconSize={9} wrapperStyle={{ fontSize: 10 }} />
               <Bar
-                dataKey="kg"
+                dataKey="weight1"
+                stackId="fs"
                 fill={C.success}
-                name="Feedstock (kg)"
+                name="Weight 1 (kg)"
+                radius={[0, 0, 0, 0]}
+              />
+              <Bar
+                dataKey="weight2"
+                stackId="fs"
+                fill={C.accent}
+                name="Weight 2 (kg)"
                 radius={[3, 3, 0, 0]}
               />
             </BarChart>

@@ -56,10 +56,10 @@ export const createFeedstock = asyncHandler(
         //    multipart sends everything as strings — convert before Zod
         const body = {
             ...req.body,
-            weight: parseFloat(req.body.weight),
-            waterLitres: req.body.waterLitres
-                ? parseFloat(req.body.waterLitres)
-                : 0,
+            weight:      parseFloat(req.body.weight),
+            waterLitres: req.body.waterLitres ? parseFloat(req.body.waterLitres) : 0,
+            weight2:     req.body.weight2 ? parseFloat(req.body.weight2) : undefined,
+            type2:       req.body.type2 || undefined,
         };
 
         // 4. Validate

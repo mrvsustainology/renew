@@ -42,7 +42,7 @@ export const reportsService = {
             }),
             prisma.user.count({ where: { role: "operator" } }),
             prisma.household.count(),
-            prisma.feedstockLog.aggregate({ _sum: { weight: true }, _count: true }),
+            prisma.feedstockLog.findMany({ select: { weight: true, weight2: true } }),
             prisma.compostLog.aggregate({ _sum: { bags: true } }),
             prisma.flowMeterReading.findMany({
                 orderBy: [{ digesterId: "asc" }, { date: "asc" }],
@@ -54,7 +54,7 @@ export const reportsService = {
             }),
         ]);
 
-        // Calculate total gas produced per digester (last - first meter reading)
+        // Gas produced per digester = last cumulative meter reading
         const gasPerDigester: Record<string, number> = {};
         const metersByDigester = meterReadings.reduce((acc, r) => {
             if (!acc[r.digesterId]) acc[r.digesterId] = [];
@@ -74,8 +74,8 @@ export const reportsService = {
         }> = [];
 
         for (const [digesterId, readings] of Object.entries(metersByDigester)) {
-            if (readings.length >= 2) {
-                const produced = +(readings[readings.length - 1].reading - readings[0].reading).toFixed(2);
+            if (readings.length >= 1) {
+                const produced = +readings[readings.length - 1].reading.toFixed(2);
                 gasPerDigester[digesterId] = produced;
                 totalGasProduced += produced;
                 for (let i = 1; i < readings.length; i++) {
@@ -114,7 +114,7 @@ export const reportsService = {
                 operatorCount: operators,
                 householdCount,
                 totalGasProduced: +totalGasProduced.toFixed(1),
-                totalFeedstockKg: +(feedstockAgg._sum.weight ?? 0).toFixed(1),
+                totalFeedstockKg: +feedstockAgg.reduce((s, r) => s + r.weight + (r.weight2 ?? 0), 0).toFixed(1),
                 totalCompostBags: compostAgg._sum.bags ?? 0,
                 totalDistributed,
                 surplus: +(totalGasProduced - totalDistributed).toFixed(2),
@@ -144,7 +144,7 @@ export const reportsService = {
             await Promise.all([
                 prisma.feedstockLog.findMany({
                     where: { date: { gte: windowStart, lte: windowEnd } },
-                    select: { date: true, weight: true, type: true, digesterId: true },
+                    select: { date: true, type: true, weight: true, type2: true, weight2: true, digesterId: true },
                 }),
                 // Fetch ALL meter readings (needed to compute accurate per-digester deltas)
                 prisma.flowMeterReading.findMany({
@@ -209,22 +209,26 @@ export const reportsService = {
             volume: +(dailyGas[d] ?? 0).toFixed(1),
         }));
 
-        // Feedstock trend
-        const fsTrend = last14.map(d => ({
-            date: d.slice(5),
-            kg: +feedstockLogs
-                .filter(r => toDateStr(r.date) === d)
-                .reduce((s, r) => s + r.weight, 0)
-                .toFixed(0),
-        }));
+        // Feedstock trend — split into weight1 and weight2 for stacked bar
+        const fsTrend = last14.map(d => {
+            const dayLogs = feedstockLogs.filter(r => toDateStr(r.date) === d);
+            return {
+                date: d.slice(5),
+                weight1: +dayLogs.reduce((s, r) => s + r.weight, 0).toFixed(0),
+                weight2: +dayLogs.reduce((s, r) => s + (r.weight2 ?? 0), 0).toFixed(0),
+            };
+        });
 
-        // Feedstock by type (all time)
+        // Feedstock by type (all time) — count both type and type2
         const allFeedstock = await prisma.feedstockLog.findMany({
-            select: { type: true, weight: true },
+            select: { type: true, weight: true, type2: true, weight2: true },
         });
         const fsByType: Record<string, number> = {};
         for (const r of allFeedstock) {
             fsByType[r.type] = (fsByType[r.type] ?? 0) + r.weight;
+            if (r.type2 && r.weight2 != null) {
+                fsByType[r.type2] = (fsByType[r.type2] ?? 0) + r.weight2;
+            }
         }
         const feedstockByType = Object.entries(fsByType).map(([name, value]) => ({
             name,
@@ -248,7 +252,7 @@ export const reportsService = {
 
         const gasBalance = digesters.map(d => {
             const readings = metersByDig[d.id] ?? [];
-            const produced = readings.length >= 2 ? +(readings[readings.length - 1] - readings[0]).toFixed(1) : 0;
+            const produced = readings.length >= 1 ? +readings[readings.length - 1].toFixed(1) : 0;
             const distributed = +allDistributions
                 .filter(r => r.digesterId === d.id)
                 .reduce((s, r) => s + r.volume, 0)
@@ -294,6 +298,8 @@ export const reportsService = {
                 operatorId: r.operatorId,
                 type: r.type,
                 weight: r.weight,
+                type2: r.type2 ?? null,
+                weight2: r.weight2 ?? null,
                 waterLitres: r.waterLitres,
                 photoUrl: r.photoUrl,
                 notes: r.notes,

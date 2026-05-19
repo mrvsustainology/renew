@@ -7,7 +7,6 @@ import {
   Btn,
   Field,
   TI,
-  SI,
   TA,
   AlertBox,
   Card,
@@ -22,12 +21,10 @@ import { C } from "@/lib/utils/tokens";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const FEEDSTOCK_TYPES = [
-  "Kitchen Waste",
   "Animal Dung (Cow)",
-  "Animal Dung (Pig)",
-  "Crop Residue",
-  "Market Waste",
-  "Mixed Organic",
+  "Water Hyacinth",
+  "Mango Peels",
+  "Other Organic Waste",
 ] as const;
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
@@ -39,6 +36,8 @@ interface FormState {
   date: string;
   type: FeedstockType | "";
   weight: string;
+  type2: FeedstockType | "";
+  weight2: string;
   waterLitres: string;
   notes: string;
   photo: File | null;
@@ -47,7 +46,7 @@ interface FormState {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function todayISO() {
-  return new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in local timezone
+  return new Date().toLocaleDateString("en-CA");
 }
 
 function fmtDate(d: string) {
@@ -58,6 +57,18 @@ function fmtDate(d: string) {
   });
 }
 
+const EMPTY_FORM: FormState = {
+  date: "",
+  type: "",
+  weight: "",
+  type2: "",
+  weight2: "",
+  waterLitres: "",
+  notes: "",
+  photo: null,
+  photoPreview: undefined,
+};
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function FeedstockPage() {
   const { isOnline } = useOnlineStatus();
@@ -65,13 +76,8 @@ export default function FeedstockPage() {
   const router = useRouter();
 
   const [form, setForm] = useState<FormState>({
+    ...EMPTY_FORM,
     date: todayISO(),
-    type: "",
-    weight: "",
-    waterLitres: "",
-    notes: "",
-    photo: null,
-    photoPreview: undefined,
   });
 
   const [confirm, setConfirm] = useState(false);
@@ -81,7 +87,12 @@ export default function FeedstockPage() {
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
 
-  const canSubmit = !!form.weight && !!form.type && !!form.photo;
+  const twoSelected = !!form.type && !!form.type2;
+  const canSubmit =
+    !!form.type &&
+    !!form.weight &&
+    !!form.photo &&
+    (!form.type2 || !!form.weight2);
 
   // ── Field updater ──────────────────────────────────────────────────────────
   const set = useCallback(
@@ -90,6 +101,28 @@ export default function FeedstockPage() {
     },
     [],
   );
+
+  // ── Type chip toggle (max 2 selections) ───────────────────────────────────
+  function toggleType(t: FeedstockType) {
+    setForm((f) => {
+      if (f.type === t) {
+        // Deselect slot 1 — promote slot 2 to slot 1
+        return { ...f, type: f.type2, weight: f.weight2, type2: "", weight2: "" };
+      }
+      if (f.type2 === t) {
+        // Deselect slot 2
+        return { ...f, type2: "", weight2: "" };
+      }
+      if (!f.type) {
+        return { ...f, type: t };
+      }
+      if (!f.type2) {
+        return { ...f, type2: t };
+      }
+      // Both slots filled — no-op
+      return f;
+    });
+  }
 
   // ── Submit ──────────────────────────────────────────────────────────────────
   const submittingRef = useRef(false);
@@ -104,6 +137,8 @@ export default function FeedstockPage() {
           date: form.date,
           type: form.type as FeedstockType,
           weight: Number(form.weight),
+          type2: form.type2 || undefined,
+          weight2: form.type2 && form.weight2 ? Number(form.weight2) : undefined,
           waterLitres: form.waterLitres !== "" ? Number(form.waterLitres) : 0,
           notes: form.notes.trim() || undefined,
         },
@@ -175,15 +210,7 @@ export default function FeedstockPage() {
             fullWidth
             size="lg"
             onClick={() => {
-              setForm({
-                date: todayISO(),
-                type: "",
-                weight: "",
-                waterLitres: "",
-                notes: "",
-                photo: null,
-                photoPreview: undefined,
-              });
+              setForm({ ...EMPTY_FORM, date: todayISO() });
               setDone(false);
               setGeneralError(null);
             }}
@@ -216,11 +243,12 @@ export default function FeedstockPage() {
       {!isOnline && (
         <AlertBox type="warning">Offline — will sync on reconnect.</AlertBox>
       )}
-
       {generalError && <AlertBox type="error">{generalError}</AlertBox>}
 
       <Card>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+
+          {/* Date + Digester */}
           <div
             style={{
               display: "grid",
@@ -237,53 +265,141 @@ export default function FeedstockPage() {
               />
             </Field>
             <Field label="Digester">
-              <TI
-                value={user?.digesterId ?? "—"}
-                onChange={() => {}}
-                disabled
-              />
+              <TI value={user?.digesterId ?? "—"} onChange={() => {}} disabled />
             </Field>
           </div>
 
-          <Field label="Feedstock Type" required>
-            <SI
-              value={form.type}
-              onChange={(e) => set("type", e.target.value as FeedstockType)}
-              options={FEEDSTOCK_TYPES as unknown as string[]}
-            />
+          {/* Feedstock Type multi-select chips */}
+          <Field
+            label="Feedstock Type"
+            required
+            note="Select 1 or 2 types"
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+                marginTop: 4,
+              }}
+            >
+              {FEEDSTOCK_TYPES.map((t) => {
+                const slotIdx = form.type === t ? 1 : form.type2 === t ? 2 : 0;
+                const isSelected = slotIdx > 0;
+                const isFull = twoSelected && !isSelected;
+
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => toggleType(t)}
+                    disabled={isFull}
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1.5px solid ${isSelected ? C.primary : C.border}`,
+                      background: isSelected ? C.primary + "12" : "#fff",
+                      color: isFull ? C.muted : C.text,
+                      fontSize: 12.5,
+                      fontFamily: C.sans,
+                      fontWeight: isSelected ? 600 : 400,
+                      cursor: isFull ? "not-allowed" : "pointer",
+                      opacity: isFull ? 0.45 : 1,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      textAlign: "left",
+                      width: "100%",
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    <span
+                      style={{
+                        minWidth: 20,
+                        height: 20,
+                        borderRadius: 5,
+                        border: `1.5px solid ${isSelected ? C.primary : C.border}`,
+                        background: isSelected ? C.primary : "transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        fontSize: 10,
+                        color: "#fff",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {isSelected ? slotIdx : ""}
+                    </span>
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+            {twoSelected && (
+              <p style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
+                Max 2 types selected. Tap a selected type to deselect it.
+              </p>
+            )}
           </Field>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-              gap: 14,
-            }}
-          >
-            <Field label="Weight (kg)" required>
-              <TI
-                type="number"
-                value={form.weight}
-                onChange={(e) => set("weight", e.target.value)}
-                placeholder="e.g. 45"
-                step="0.1"
-                min="0"
-                inputMode="decimal"
-              />
-            </Field>
-            <Field label="Water Added (litres)" note="Dilution water added">
-              <TI
-                type="number"
-                value={form.waterLitres}
-                onChange={(e) => set("waterLitres", e.target.value)}
-                placeholder="e.g. 20"
-                step="1"
-                min="0"
-                inputMode="decimal"
-              />
-            </Field>
-          </div>
+          {/* Weight(s) — 2-col when two types selected, full-width otherwise */}
+          {form.type && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: twoSelected ? "1fr 1fr" : "1fr",
+                  gap: 14,
+                  alignItems: "end",
+                }}
+              >
+                <Field
+                  label={twoSelected ? `Weight 1 — ${form.type}` : "Weight (kg)"}
+                  required
+                >
+                  <TI
+                    type="number"
+                    value={form.weight}
+                    onChange={(e) => set("weight", e.target.value)}
+                    placeholder="e.g. 45"
+                    step="0.1"
+                    min="0"
+                    inputMode="decimal"
+                  />
+                </Field>
 
+                {twoSelected && (
+                  <Field label={`Weight 2 — ${form.type2}`} required>
+                    <TI
+                      type="number"
+                      value={form.weight2}
+                      onChange={(e) => set("weight2", e.target.value)}
+                      placeholder="e.g. 30"
+                      step="0.1"
+                      min="0"
+                      inputMode="decimal"
+                    />
+                  </Field>
+                )}
+              </div>
+
+              {/* Water added — always below weights */}
+              <Field label="Water Added (litres)" note="Dilution water added">
+                <TI
+                  type="number"
+                  value={form.waterLitres}
+                  onChange={(e) => set("waterLitres", e.target.value)}
+                  placeholder="e.g. 20"
+                  step="1"
+                  min="0"
+                  inputMode="decimal"
+                />
+              </Field>
+            </div>
+          )}
+
+          {/* Photo */}
           <Field
             label="Photo of Feedstock"
             required
@@ -315,6 +431,7 @@ export default function FeedstockPage() {
             </p>
           )}
 
+          {/* Notes */}
           <Field label="Notes / Observations">
             <TA
               value={form.notes}
@@ -334,7 +451,7 @@ export default function FeedstockPage() {
 
           {!canSubmit && (
             <p style={{ fontSize: 11, color: C.muted, textAlign: "center" }}>
-              Fill all required fields and attach a photo to continue.
+              Select a type, fill weight(s), and attach a photo to continue.
             </p>
           )}
         </div>
@@ -345,8 +462,14 @@ export default function FeedstockPage() {
           title="Confirm Feedstock Entry"
           rows={[
             { label: "Date", value: fmtDate(form.date) },
-            { label: "Type", value: form.type },
-            { label: "Weight", value: `${form.weight} kg` },
+            { label: form.type2 ? "Type 1" : "Type", value: form.type },
+            { label: form.type2 ? "Weight 1" : "Weight", value: `${form.weight} kg` },
+            ...(form.type2
+              ? [
+                  { label: "Type 2", value: form.type2 },
+                  { label: "Weight 2", value: `${form.weight2} kg` },
+                ]
+              : []),
             { label: "Water Added", value: `${form.waterLitres || 0} L` },
             { label: "Photo", value: "✓ Attached" },
             { label: "Notes", value: form.notes || "—" },

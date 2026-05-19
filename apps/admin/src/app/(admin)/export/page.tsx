@@ -114,8 +114,8 @@ export default function ExportPage() {
         to,
       );
       const gasProduced =
-        dMT.length >= 2
-          ? +(dMT[dMT.length - 1].reading - dMT[0].reading).toFixed(2)
+        dMT.length >= 1
+          ? +dMT[dMT.length - 1].reading.toFixed(2)
           : 0;
       return {
         digester_id: d.id,
@@ -157,8 +157,10 @@ export default function ExportPage() {
         digester_id: r.digesterId,
         location: r.location,
         operator_name: op?.name ?? "",
-        feedstock_type: r.type,
-        weight_kg: r.weight,
+        feedstock_type_1: r.type,
+        weight_1_kg: r.weight,
+        feedstock_type_2: r.type2 ?? "",
+        weight_2_kg: r.weight2 ?? "",
         water_litres: r.waterLitres ?? 0,
         has_photo: r.photoUrl ? "Yes" : "No",
         notes: r.notes ?? "",

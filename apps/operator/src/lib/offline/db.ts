@@ -31,9 +31,11 @@ export interface CachedFeedstockLog {
     id: string;
     localId?: string;          // set if created offline
     date: string;
-    weight: number;
-    waterLitres: number;
     type: string;
+    weight: number;
+    type2?: string;
+    weight2?: number;
+    waterLitres: number;
     notes?: string;
     photoUrl?: string;          // null if offline — photo in IndexedDB
     synced: boolean;

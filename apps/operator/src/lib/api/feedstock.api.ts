@@ -9,9 +9,11 @@ export const feedstockApi = {
     submit: async (
         formData: {
             date: string;
-            weight: number;
-            waterLitres: number;
             type: string;
+            weight: number;
+            type2?: string;
+            weight2?: number;
+            waterLitres: number;
             notes?: string;
         },
         photo: File,
@@ -24,9 +26,11 @@ export const feedstockApi = {
             const fd = new FormData();
             fd.append("photo", photo);
             fd.append("date", formData.date);
-            fd.append("weight", formData.weight.toString());
-            fd.append("waterLitres", formData.waterLitres.toString());
             fd.append("type", formData.type);
+            fd.append("weight", formData.weight.toString());
+            if (formData.type2) fd.append("type2", formData.type2);
+            if (formData.weight2 != null) fd.append("weight2", formData.weight2.toString());
+            fd.append("waterLitres", formData.waterLitres.toString());
             if (formData.notes) fd.append("notes", formData.notes);
 
             const res = await apiClient.post("/feedstock", fd);
@@ -36,9 +40,11 @@ export const feedstockApi = {
                 id: record.id,
                 localId,
                 date: formData.date,
-                weight: formData.weight,
-                waterLitres: formData.waterLitres,
                 type: formData.type,
+                weight: formData.weight,
+                type2: formData.type2,
+                weight2: formData.weight2,
+                waterLitres: formData.waterLitres,
                 notes: formData.notes,
                 photoUrl: record.photoUrl,
                 synced: true,
@@ -59,9 +65,11 @@ export const feedstockApi = {
                 id: localId,
                 localId,
                 date: formData.date,
-                weight: formData.weight,
-                waterLitres: formData.waterLitres,
                 type: formData.type,
+                weight: formData.weight,
+                type2: formData.type2,
+                weight2: formData.weight2,
+                waterLitres: formData.waterLitres,
                 notes: formData.notes,
                 photoUrl: undefined,
                 synced: false,

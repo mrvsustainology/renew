@@ -176,13 +176,10 @@ export const meterService = {
             select: { reading: true },
         });
 
-        if (readings.length < 2) return 0;
+        if (readings.length < 1) return 0;
 
-        // Total = last reading - first reading
-        const first = readings[0].reading;
-        const last = readings[readings.length - 1].reading;
-
-        return +(last - first).toFixed(2);
+        // Total produced = last cumulative meter reading
+        return +readings[readings.length - 1].reading.toFixed(2);
     },
 
     // Admin — get all readings across all digesters

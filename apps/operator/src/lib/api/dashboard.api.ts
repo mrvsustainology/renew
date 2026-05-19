@@ -75,8 +75,8 @@ export const dashboardApi = {
                 db.feedstock.where("digesterId").equals(digesterId).toArray(),
             ]);
 
-            const totalProduced = allMeter.length >= 2
-                ? +(allMeter[allMeter.length - 1].reading - allMeter[0].reading).toFixed(2)
+            const totalProduced = allMeter.length >= 1
+                ? +allMeter[allMeter.length - 1].reading.toFixed(2)
                 : 0;
 
             const totalDistributed = +allDist

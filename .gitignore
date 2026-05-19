@@ -12,3 +12,4 @@ CLAUDE.md
 apps/server/prisma/migrations/
 apps/server/prisma/seed.ts
 apps/server/prisma/seed.js
+apps/.claude

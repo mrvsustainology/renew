@@ -53,7 +53,7 @@ export interface OverviewData {
 
 export interface ChartsData {
     gasTrend: Array<{ date: string; volume: number }>;
-    fsTrend: Array<{ date: string; kg: number }>;
+    fsTrend: Array<{ date: string; weight1: number; weight2: number }>;
     feedstockByType: Array<{ name: string; value: number }>;
     compostTrend: Array<{ date: string; bags: number }>;
     gasBalance: Array<{ id: string; produced: number; distributed: number }>;

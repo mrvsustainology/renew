@@ -84,13 +84,10 @@ export const digesterService = {
                 }),
             ]);
 
-        // Derive total gas produced from first→last meter delta
+        // Total gas produced = last cumulative meter reading
         const totalProduced =
-            meterReadings.length >= 2
-                ? +(
-                    meterReadings[meterReadings.length - 1].reading -
-                    meterReadings[0].reading
-                ).toFixed(2)
+            meterReadings.length >= 1
+                ? +meterReadings[meterReadings.length - 1].reading.toFixed(2)
                 : 0;
 
         return {
