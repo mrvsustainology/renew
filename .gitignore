@@ -6,3 +6,9 @@ dist/
 *.log
 .turbo/
 node_modules
+CLAUDE.md
+
+# Dev/DB tooling — not part of live code
+apps/server/prisma/migrations/
+apps/server/prisma/seed.ts
+apps/server/prisma/seed.js
